@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const organizerScheduleSchema = new mongoose.Schema({
     userId: {
-        type: String,
+        type: mongoose.Types.ObjectId,
         required: true
     },
     eventName: {
-        type : String,
-        required :true
+        type: String,
+        required: true
     },
     eventStartDate: {
         type: Date, // Assuming the event date is stored as a Date object

@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const OrganizerScheduleModel = require('../Models/OrganizerScheduleModel'); // Importing the Mongoose model
-// const { default: mongoose } = require('mongoose');
 const { ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
+
 
 
 // POST route to create a new organizer schedule entry
@@ -89,24 +90,26 @@ router.get('/UsersOrganizerSchedule/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
 
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid userId format' });
+        }
+
+        const objectId = new mongoose.Types.ObjectId(userId);
+
         const schedules = await OrganizerScheduleModel.aggregate([
             {
-                $match: {
-                    userId: userId // Convert userId to ObjectId
-                }
+                $match: { userId: objectId }
             },
             {
                 $lookup: {
-                    from: 'organizers', // The name of the collection in the database
+                    from: 'organizers', // Make sure this is the correct collection name
                     localField: 'userId',
                     foreignField: 'userId',
                     as: 'organizer'
                 }
             },
-            {
-                $unwind: '$organizer' // Unwind the array created by the $lookup stage
-            },
-
+            { $unwind: '$organizer' },
             {
                 $project: {
                     _id: 1,
@@ -129,15 +132,18 @@ router.get('/UsersOrganizerSchedule/:userId', async (req, res) => {
                     }
                 }
             }
-
         ]);
 
-        res.status(200).json({ message: 'Successfully fetched organizer schedules', data: schedules });
+        res.status(200).json({
+            message: 'Successfully fetched organizer schedules',
+            data: schedules
+        });
     } catch (error) {
         console.error('Error fetching organizer schedules:', error);
         res.status(500).json({ message: 'Error fetching organizer schedules' });
     }
 });
+
 
 router.get('/OrganizerSchedulegetById/:Id', async (req, res) => {
     try {
